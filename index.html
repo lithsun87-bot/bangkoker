@@ -73,6 +73,12 @@ button:focus-visible,.pin:focus-visible{outline:3px solid var(--red);outline-off
 #sheet .card h2{font-size:20px}
 #sheet a{color:var(--gold);font-weight:600}
 @media (prefers-reduced-motion:reduce){#reticle,#reticle b,#sp s,#fn{animation:none!important}#sheet{transition:none}}
+.pic{display:none;height:min(32vh,230px);border-radius:999px 999px 14px 14px;border:3px solid var(--pc,#fff);background-size:cover;background-position:center;box-shadow:0 0 20px var(--pc),0 6px 18px rgba(0,0,0,.5);animation:pop .6s cubic-bezier(.2,1.4,.4,1) backwards,fl 3.4s ease-in-out .6s infinite;transition:scale .4s,box-shadow .4s}
+.cam .pic{display:block}.cam .dot{display:none}
+.pin.on .pic{scale:1.22;box-shadow:0 0 46px var(--pc),0 6px 18px rgba(0,0,0,.5)}
+@keyframes pop{from{opacity:0;transform:scale(.3) translateY(40px)}}
+@keyframes fl{50%{transform:translateY(-9px)}}
+@media (prefers-reduced-motion:reduce){.pic{animation:none}}
 </style></head><body>
 <header><h1>เที่ยวกรุงเทพแบบ AR</h1><p>แตะจุดบนภาพเพื่อดูข้อมูล หรือเปิดกล้องแล้วหันไปทางสถานที่ ระบบจะจับภาพพร้อมแอนิเมชัน</p></header>
 <div class="bar"><button id="cam">เปิดกล้อง AR</button><span id="msg"></span></div>
@@ -97,24 +103,28 @@ let stream,th=0,head=0,sensor=false,real=false,base='',lk=null,dw=0,drag=null,li
 const DEMO={lat:13.749,lng:100.495};let pos=DEMO;
 const S=document.getElementById('stage'),V=document.getElementById('v'),C=document.getElementById('cam'),X=document.getElementById('x'),H=document.getElementById('hint'),FN=document.getElementById('fn'),FE=document.getElementById('fe'),SH=document.getElementById('sheet'),SP=document.getElementById('sp');
 const pins=[...document.querySelectorAll('.pin')];
+const IM=document.querySelector('.stage img'),PN=[[.004,.234],[.242,.493],[.502,.782],[.791,.996]],DB=[-30,-10,10,30];
+function crops(){const W=IM.naturalWidth,Ht=IM.naturalHeight;P.forEach((p,i)=>{const[a,b]=PN[i],c=document.createElement('canvas');c.width=Math.round((b-a)*W);c.height=Ht;c.getContext('2d').drawImage(IM,a*W,0,c.width,Ht,0,0,c.width,Ht);const e=document.createElement('span');e.className='pic';e.style.cssText='aspect-ratio:'+c.width+'/'+c.height+';background-image:url('+c.toDataURL('image/jpeg',.85)+')';pins[i].style.setProperty('--pc',p.c);pins[i].insertBefore(e,pins[i].querySelector('.tag'))})}
+IM.complete&&IM.naturalWidth?crops():IM.addEventListener('load',crops);
 for(let k=0;k<12;k++){const s=document.createElement('s');s.style.setProperty('--a',k*30+'deg');SP.appendChild(s)}
 const R=Math.PI/180;
 const bear=(a,b,c,d)=>{const y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math.cos(a*R)*Math.sin(c*R)-Math.sin(a*R)*Math.cos(c*R)*Math.cos((d-b)*R);return(Math.atan2(y,x)/R+360)%360};
 const dist=(a,b,c,d)=>{const p=Math.sin((c-a)*R/2)**2+Math.cos(a*R)*Math.cos(c*R)*Math.sin((d-b)*R/2)**2;return 12742*Math.asin(Math.sqrt(p))};
+const brg=i=>real?bear(pos.lat,pos.lng,P[i].lat,P[i].lng):(DB[i]+360)%360;
 const dlt=(a,b)=>((a-b+540)%360)-180;
 function tilt(al,be,ga){const x=(be||0)*R,y=(ga||0)*R,z=(al||0)*R;const vx=-Math.cos(z)*Math.sin(y)-Math.sin(z)*Math.sin(x)*Math.cos(y),vy=-Math.sin(z)*Math.sin(y)+Math.cos(z)*Math.sin(x)*Math.cos(y);let h=Math.atan(vx/vy);if(vy<0)h+=Math.PI;else if(vx<0)h+=2*Math.PI;return h/R}
 function onO(e){let h=null;if(e.webkitCompassHeading!=null)h=e.webkitCompassHeading;else if(e.absolute&&e.alpha!=null)h=tilt(e.alpha,e.beta,e.gamma);if(h==null)return;th=h;if(!sensor){sensor=true;head=h;mode()}}
-function mode(){base=real&&sensor?'หันกล้องไปทางสถานที่ แล้วค้างไว้ให้กรอบจับภาพ':sensor?'โหมดสาธิต (ตำแหน่งจำลองย่านเกาะรัตนโกสินทร์) หมุนตัวรอบๆ ได้เลย':'โหมดสาธิต: ลากนิ้วบนจอเพื่อหมุนมุมมอง'}
+function mode(){base=real&&sensor?'หันกล้องไปทางสถานที่ แล้วค้างไว้ให้กรอบจับภาพ':sensor?'โหมดสาธิต (ยังไม่ได้อยู่ใกล้สถานที่) หมุนตัวรอบๆ เพื่อดูแต่ละที่':'โหมดสาธิต: ลากนิ้วบนจอเพื่อหมุนมุมมอง'}
 function lockOn(i){const p=P[i];lk=i;dw=0;S.style.setProperty('--c',p.c);FN.textContent='พบแล้ว · '+p.n;FE.textContent=p.e;
 const km=real?' · ห่างราว '+dist(pos.lat,pos.lng,p.lat,p.lng).toFixed(1)+' กม.':'';
 SH.innerHTML='<div class="card"><h2>'+p.n+'</h2><p class="en">'+p.e+'</p><p>'+p.d+'</p><p class="tip">เคล็ดลับ: '+p.t+'</p><p><a href="https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng+'" target="_blank" rel="noopener">นำทางไปที่นี่</a>'+km+'</p></div>';
-show(i);S.classList.add('lock');H.textContent='';navigator.vibrate&&navigator.vibrate(40)}
-function unlock(){S.classList.remove('lock');lk=null;dw=0}
+show(i);S.classList.add('lock');pins[i].classList.add('on');H.textContent='';navigator.vibrate&&navigator.vibrate(40)}
+function unlock(){S.classList.remove('lock');pins.forEach(b=>b.classList.remove('on'));lk=null;dw=0}
 function tick(){if(!stream)return;if(sensor)head=(head+dlt(th,head)*.2+360)%360;
 const FOV=innerWidth<innerHeight?52:70;let bi=0,bd=999;
-P.forEach((p,i)=>{const d=dlt(bear(pos.lat,pos.lng,p.lat,p.lng),head),el=pins[i],v=Math.abs(d)<FOV/2+6;el.style.display=v?'':'none';if(v){el.style.left=50+d/FOV*100+'%';el.style.top='45%'}if(Math.abs(d)<Math.abs(bd)){bd=d;bi=i}});
+P.forEach((p,i)=>{const d=dlt(brg(i),head),el=pins[i],v=Math.abs(d)<FOV/2+6;el.style.display=v?'':'none';if(v){el.style.left=50+d/FOV*100+'%';el.style.top='45%'}if(Math.abs(d)<Math.abs(bd)){bd=d;bi=i}});
 if(lk==null){if(Math.abs(bd)<7){if(++dw>14)lockOn(bi)}else dw=0}
-else if(Math.abs(dlt(bear(pos.lat,pos.lng,P[lk].lat,P[lk].lng),head))>13)unlock();
+else if(Math.abs(dlt(brg(lk),head))>13)unlock();
 if(lk==null)H.textContent=base+' · '+(Math.abs(bd)<7?'กำลังจับภาพ…':'ใกล้สุด: '+P[bi].n+(bd<0?' ◀ ซ้าย':' ขวา ▶'));
 requestAnimationFrame(tick)}
 function stop(){stream&&stream.getTracks().forEach(t=>t.stop());stream=null;unlock();S.classList.remove('cam');document.body.style.overflow='';C.textContent='เปิดกล้อง AR';M.textContent='';P.forEach((p,i)=>{pins[i].style.display='';pins[i].style.left=p.x+'%';pins[i].style.top=p.y+'%'})}
