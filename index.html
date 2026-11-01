@@ -110,13 +110,13 @@ for(let k=0;k<12;k++){const s=document.createElement('s');s.style.setProperty('-
 const R=Math.PI/180;
 const bear=(a,b,c,d)=>{const y=Math.sin((d-b)*R)*Math.cos(c*R),x=Math.cos(a*R)*Math.sin(c*R)-Math.sin(a*R)*Math.cos(c*R)*Math.cos((d-b)*R);return(Math.atan2(y,x)/R+360)%360};
 const dist=(a,b,c,d)=>{const p=Math.sin((c-a)*R/2)**2+Math.cos(a*R)*Math.cos(c*R)*Math.sin((d-b)*R/2)**2;return 12742*Math.asin(Math.sqrt(p))};
-const brg=i=>real?bear(pos.lat,pos.lng,P[i].lat,P[i].lng):(DB[i]+360)%360;
+const brg=i=>real&&sensor?bear(pos.lat,pos.lng,P[i].lat,P[i].lng):(DB[i]+360)%360;
 const dlt=(a,b)=>((a-b+540)%360)-180;
 function tilt(al,be,ga){const x=(be||0)*R,y=(ga||0)*R,z=(al||0)*R;const vx=-Math.cos(z)*Math.sin(y)-Math.sin(z)*Math.sin(x)*Math.cos(y),vy=-Math.sin(z)*Math.sin(y)+Math.cos(z)*Math.sin(x)*Math.cos(y);let h=Math.atan(vx/vy);if(vy<0)h+=Math.PI;else if(vx<0)h+=2*Math.PI;return h/R}
 function onO(e){let h=null;if(e.webkitCompassHeading!=null)h=e.webkitCompassHeading;else if(e.absolute&&e.alpha!=null)h=tilt(e.alpha,e.beta,e.gamma);if(h==null)return;th=h;if(!sensor){sensor=true;head=h;mode()}}
 function mode(){base=real&&sensor?'หันกล้องไปทางสถานที่ แล้วค้างไว้ให้กรอบจับภาพ':sensor?'โหมดสาธิต (ยังไม่ได้อยู่ใกล้สถานที่) หมุนตัวรอบๆ เพื่อดูแต่ละที่':'โหมดสาธิต: ลากนิ้วบนจอเพื่อหมุนมุมมอง'}
 function lockOn(i){const p=P[i];lk=i;dw=0;S.style.setProperty('--c',p.c);FN.textContent='พบแล้ว · '+p.n;FE.textContent=p.e;
-const km=real?' · ห่างราว '+dist(pos.lat,pos.lng,p.lat,p.lng).toFixed(1)+' กม.':'';
+const km=real&&sensor?' · ห่างราว '+dist(pos.lat,pos.lng,p.lat,p.lng).toFixed(1)+' กม.':'';
 SH.innerHTML='<div class="card"><h2>'+p.n+'</h2><p class="en">'+p.e+'</p><p>'+p.d+'</p><p class="tip">เคล็ดลับ: '+p.t+'</p><p><a href="https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng+'" target="_blank" rel="noopener">นำทางไปที่นี่</a>'+km+'</p></div>';
 show(i);S.classList.add('lock');pins[i].classList.add('on');H.textContent='';navigator.vibrate&&navigator.vibrate(40)}
 function unlock(){S.classList.remove('lock');pins.forEach(b=>b.classList.remove('on'));lk=null;dw=0}
